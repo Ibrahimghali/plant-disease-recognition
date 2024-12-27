@@ -1,5 +1,27 @@
-.venv
-*h5
-__pycache__
+# Python bytecode files
+*.pyc
+*.pyo
+__pycache__/
 
-dataset
+# Virtual environment
+.venv/
+env/
+venv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# TensorFlow model files (optional, depending on your needs)
+*.h5
+*.ckpt
+
+# Datasets (if the dataset is too large, exclude it from the repo)
+dataset/
+
+# Logs
+*.log
+
+# IDE and editor configurations
+.vscode/
+.idea/
+*.swp
