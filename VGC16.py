@@ -132,8 +132,8 @@ def save_experiment_results(history, test_results, experiment_name, experiment_i
 # Configuration
 IMG_SIZE = 224  # VGG16 default input size
 BATCH_SIZE = 32
-EPOCHS = 50
-LEARNING_RATE = 0.0001
+EPOCHS = 30
+LEARNING_RATE = 0.00001
 
 # Directory paths - UPDATE THESE with your actual paths
 TRAIN_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_desease\\Train\\Train"
@@ -182,8 +182,9 @@ base_model = VGG16(
     input_shape=(IMG_SIZE, IMG_SIZE, 3)
 )
 
-# Freeze the base model
-base_model.trainable = False
+# Unfreeze the last few convolutional layers
+for layer in base_model.layers[:-30]:  # Freeze all except last 30 layers
+    layer.trainable = False
 
 # Create the complete model
 inputs = tf.keras.Input(shape=(IMG_SIZE, IMG_SIZE, 3))

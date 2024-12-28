@@ -1,0 +1,65 @@
+{
+    "experiment_info": {
+        "type": "augmented_model",
+        "model": "VGG16",
+        "epochs": 30,
+        "batch_size": 32,
+        "learning_rate": 1e-05,
+        "data_augmentation": {
+            "rotation_range": 15,
+            "width_shift_range": 0.1,
+            "height_shift_range": 0.1,
+            "horizontal_flip": true,
+            "zoom_range": 0.1
+        },
+        "frozen_layers": "all"
+    },
+    "training_metrics": {
+        "best_accuracy": {
+            "training": 0.9977307319641113,
+            "validation": 0.9833333492279053,
+            "test": 0.9733333587646484
+        },
+        "final_loss": {
+            "training": 0.012481358833611012,
+            "validation": 0.08890735357999802,
+            "test": 0.1519850343465805
+        },
+        "final_epoch": 12,
+        "stopped_early": true
+    },
+    "per_class_metrics": {
+        "Healthy": {
+            "precision": 0.28846153846153844,
+            "recall": 0.3,
+            "f1_score": 0.29411764705882354
+        },
+        "Powdery": {
+            "precision": 0.32608695652173914,
+            "recall": 0.3,
+            "f1_score": 0.31250000000000006
+        },
+        "Rust": {
+            "precision": 0.40384615384615385,
+            "recall": 0.42,
+            "f1_score": 0.4117647058823529
+        }
+    },
+    "confusion_matrix": [
+        [
+            15,
+            20,
+            15
+        ],
+        [
+            19,
+            15,
+            16
+        ],
+        [
+            18,
+            11,
+            21
+        ]
+    ]
+}
