@@ -132,8 +132,8 @@ def save_experiment_results(history, test_results, experiment_name, experiment_i
 # Configuration
 IMG_SIZE = 224  # ResNet50 default input size
 BATCH_SIZE = 32
-EPOCHS = 30
-LEARNING_RATE = 1e-5  # Much lower learning rate for fine-tuning all layers
+EPOCHS = 30  # Reduced epochs since we expect faster convergence with augmentation
+LEARNING_RATE =  0.0001
 
 # Directory paths - UPDATE THESE with your actual paths
 TRAIN_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_desease\\Train\\Train"
@@ -189,10 +189,9 @@ base_model = ResNet50(
     input_shape=(IMG_SIZE, IMG_SIZE, 3)
 )
 
-# Unfreeze all layers
-base_model.trainable = True
-print("Total layers in base model:", len(base_model.layers))
-print("All layers are now trainable")
+# Unfreeze the last few convolutional layers
+for layer in base_model.layers[:-30]:  # Freeze all except last 30 layers
+    layer.trainable = False
 
 # Create the complete model
 inputs = tf.keras.Input(shape=(IMG_SIZE, IMG_SIZE, 3))
@@ -203,7 +202,7 @@ outputs = Dense(3, activation='softmax')(x)  # 3 classes for plant disease
 
 model = tf.keras.Model(inputs, outputs)
 
-# Compile the model with a lower learning rate
+# Compile the model
 model.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE),
     loss='categorical_crossentropy',
@@ -213,15 +212,15 @@ model.compile(
 # Create callbacks
 early_stopping = tf.keras.callbacks.EarlyStopping(
     monitor='val_accuracy',
-    patience=8,  # Increased patience since we're fine-tuning all layers
+    patience=5,
     restore_best_weights=True
 )
 
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss',
     factor=0.2,
-    patience=4,
-    min_lr=1e-7
+    patience=3,
+    min_lr=1e-6
 )
 
 # Train the model
@@ -245,7 +244,7 @@ test_results = model.evaluate(test_generator)
 
 # Save results
 experiment_info = {
-    'type': 'fully_unfrozen_model',
+    'type': 'augmented_model',
     'model': 'ResNet50',
     'epochs': EPOCHS,
     'batch_size': BATCH_SIZE,
@@ -257,19 +256,18 @@ experiment_info = {
         'horizontal_flip': True,
         'zoom_range': 0.1
     },
-    'frozen_layers': 'none',
-    'trainable_parameters': int(np.sum([np.prod(v.get_shape()) for v in model.trainable_variables]))
+    'frozen_layers': 'all'
 }
 
 results = save_experiment_results(
     history=history,
     test_results=test_results,
-    experiment_name='unfrozen_resnet50',
+    experiment_name='augmented_resnet50',
     experiment_info=experiment_info,
     model=model,
     test_generator=test_generator
 )
 
 print("\nExperiment completed! Check the generated files:")
-print("1. unfrozen_resnet50_training_history.png - Training plots")
-print("2. unfrozen_resnet50_results.json - Detailed metrics")
+print("1. augmented_resnet50_training_history.png - Training plots")
+print("2. augmented_resnet50_results.json - Detailed metrics")

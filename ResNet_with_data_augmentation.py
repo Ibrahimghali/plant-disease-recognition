@@ -136,9 +136,9 @@ EPOCHS = 30  # Reduced epochs since we expect faster convergence with augmentati
 LEARNING_RATE = 0.001
 
 # Directory paths - UPDATE THESE with your actual paths
-TRAIN_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_test\\train_1"
-VALID_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_test\\validation_1"
-TEST_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_test\\test_1"
+TRAIN_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_desease\\Train\\Train"
+VALID_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_desease\\Validation\\Validation"
+TEST_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_desease\\Test\\Test"
 
 # Create data generators with augmentation for training
 train_datagen = ImageDataGenerator(
