@@ -4,7 +4,7 @@
         "model": "ResNet50",
         "epochs": 30,
         "batch_size": 32,
-        "learning_rate": 0.001,
+        "learning_rate": 1e-05,
         "data_augmentation": {
             "rotation_range": 15,
             "width_shift_range": 0.1,
@@ -16,50 +16,50 @@
     },
     "training_metrics": {
         "best_accuracy": {
-            "training": 0.5945537090301514,
-            "validation": 0.6000000238418579,
-            "test": 0.5199999809265137
+            "training": 0.827534019947052,
+            "validation": 0.8500000238418579,
+            "test": 0.7333333492279053
         },
         "final_loss": {
-            "training": 0.9280403852462769,
-            "validation": 0.8626575469970703,
-            "test": 0.9678294062614441
+            "training": 0.4398486018180847,
+            "validation": 0.527339518070221,
+            "test": 0.6515876054763794
         },
         "final_epoch": 15,
         "stopped_early": true
     },
     "per_class_metrics": {
         "Healthy": {
-            "precision": 0.2857142857142857,
-            "recall": 0.44,
-            "f1_score": 0.34645669291338577
+            "precision": 0.2878787878787879,
+            "recall": 0.38,
+            "f1_score": 0.3275862068965517
         },
         "Powdery": {
-            "precision": 0.2857142857142857,
-            "recall": 0.4,
-            "f1_score": 0.3333333333333333
+            "precision": 0.3617021276595745,
+            "recall": 0.34,
+            "f1_score": 0.3505154639175258
         },
         "Rust": {
-            "precision": 0.3333333333333333,
-            "recall": 0.02,
-            "f1_score": 0.03773584905660377
+            "precision": 0.1891891891891892,
+            "recall": 0.14,
+            "f1_score": 0.16091954022988506
         }
     },
     "confusion_matrix": [
         [
-            22,
-            27,
-            1
+            19,
+            13,
+            18
         ],
         [
-            29,
-            20,
-            1
+            21,
+            17,
+            12
         ],
         [
             26,
-            23,
-            1
+            17,
+            7
         ]
     ]
 }
