@@ -9,6 +9,12 @@ import numpy as np
 from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
 import seaborn as sns
 
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.layers import (Conv2D, MaxPooling2D, Dense, Flatten,
+                                     Dropout, BatchNormalization, Input)
+from tensorflow.keras.regularizers import l2
+
 
 def plot_training_history(history, model_name):
     """Creates comprehensive training history plots."""
@@ -130,50 +136,35 @@ def save_experiment_results(history, test_results, experiment_name, experiment_i
     return results
 
 
-def create_custom_cnn():
-    """Creates a custom CNN architecture for plant disease classification."""
+
+def create_improved_cnn():
+    """Creates a lighter CNN architecture suitable for small datasets with strong regularization."""
     inputs = Input(shape=(224, 224, 3))
 
-    # First Convolutional Block
-    x = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
-    x = BatchNormalization()(x)
-    x = Conv2D(32, (3, 3), activation='relu', padding='same')(x)
+    # First Convolutional Block - Start with fewer filters
+    x = Conv2D(16, (3, 3), activation='relu', padding='same',
+               kernel_regularizer=l2(0.01))(inputs)
     x = BatchNormalization()(x)
     x = MaxPooling2D((2, 2))(x)
-    x = Dropout(0.25)(x)
 
     # Second Convolutional Block
-    x = Conv2D(64, (3, 3), activation='relu', padding='same')(x)
-    x = BatchNormalization()(x)
-    x = Conv2D(64, (3, 3), activation='relu', padding='same')(x)
+    x = Conv2D(32, (3, 3), activation='relu', padding='same',
+               kernel_regularizer=l2(0.01))(x)
     x = BatchNormalization()(x)
     x = MaxPooling2D((2, 2))(x)
-    x = Dropout(0.25)(x)
 
     # Third Convolutional Block
-    x = Conv2D(128, (3, 3), activation='relu', padding='same')(x)
-    x = BatchNormalization()(x)
-    x = Conv2D(128, (3, 3), activation='relu', padding='same')(x)
-    x = BatchNormalization()(x)
-    x = MaxPooling2D((2, 2))(x)
-    x = Dropout(0.25)(x)
-
-    # Fourth Convolutional Block
-    x = Conv2D(256, (3, 3), activation='relu', padding='same')(x)
-    x = BatchNormalization()(x)
-    x = Conv2D(256, (3, 3), activation='relu', padding='same')(x)
+    x = Conv2D(64, (3, 3), activation='relu', padding='same',
+               kernel_regularizer=l2(0.01))(x)
     x = BatchNormalization()(x)
     x = MaxPooling2D((2, 2))(x)
-    x = Dropout(0.25)(x)
+    x = Dropout(0.3)(x)
 
     # Flatten and Dense Layers
     x = Flatten()(x)
-    x = Dense(512, activation='relu')(x)
+    x = Dense(128, activation='relu', kernel_regularizer=l2(0.01))(x)
     x = BatchNormalization()(x)
-    x = Dropout(0.5)(x)
-    x = Dense(256, activation='relu')(x)
-    x = BatchNormalization()(x)
-    x = Dropout(0.5)(x)
+    x = Dropout(0.4)(x)
     outputs = Dense(3, activation='softmax')(x)
 
     model = Model(inputs=inputs, outputs=outputs)
@@ -181,51 +172,46 @@ def create_custom_cnn():
 
 
 # Configuration
-IMG_SIZE = 224  # Keep same size as transfer learning models for fair comparison
-BATCH_SIZE = 32
-EPOCHS = 30  # Matching unfrozen ResNet50 configuration
-LEARNING_RATE = 1e-5  # Matching unfrozen ResNet50 learning rate
+IMG_SIZE = 224
+BATCH_SIZE = 16  # Reduced batch size
+EPOCHS = 50  # Increased epochs to allow for slower learning
+INITIAL_LR = 1e-3  # Higher initial learning rate
 
-# Directory paths - UPDATE THESE with your actual paths
-TRAIN_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_desease\\Train\\Train"
-VALID_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_desease\\Validation\\Validation"
-TEST_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_desease\\Test\\Test"
-
-# Create data generators with augmentation for training
+# Create data generators with stronger augmentation
 train_datagen = ImageDataGenerator(
     rescale=1. / 255,
-    rotation_range=15,
-    width_shift_range=0.1,
-    height_shift_range=0.1,
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
     horizontal_flip=True,
-    zoom_range=0.1,
-    fill_mode='nearest'
+    vertical_flip=True,  # Added vertical flip
+    zoom_range=0.15,
+    shear_range=0.15,  # Added shear
+    fill_mode='nearest',
+    validation_split=0.2  # Using validation split instead of separate validation dir
 )
 
-# No augmentation for validation/test sets
-valid_test_datagen = ImageDataGenerator(
-    rescale=1. / 255
-)
+# No augmentation for test set
+test_datagen = ImageDataGenerator(rescale=1. / 255)
 
 # Create generators
-print("Loading training data...")
 train_generator = train_datagen.flow_from_directory(
     TRAIN_DIR,
     target_size=(IMG_SIZE, IMG_SIZE),
     batch_size=BATCH_SIZE,
-    class_mode='categorical'
+    class_mode='categorical',
+    subset='training'
 )
 
-print("Loading validation data...")
-validation_generator = valid_test_datagen.flow_from_directory(
-    VALID_DIR,
+validation_generator = train_datagen.flow_from_directory(
+    TRAIN_DIR,
     target_size=(IMG_SIZE, IMG_SIZE),
     batch_size=BATCH_SIZE,
-    class_mode='categorical'
+    class_mode='categorical',
+    subset='validation'
 )
 
-print("Loading test data...")
-test_generator = valid_test_datagen.flow_from_directory(
+test_generator = test_datagen.flow_from_directory(
     TEST_DIR,
     target_size=(IMG_SIZE, IMG_SIZE),
     batch_size=BATCH_SIZE,
@@ -233,40 +219,38 @@ test_generator = valid_test_datagen.flow_from_directory(
 )
 
 # Create and compile the model
-print("Creating custom CNN model...")
-model = create_custom_cnn()
+model = create_improved_cnn()
 
-# Compile the model
+# Learning rate schedule
+initial_learning_rate = INITIAL_LR
+decay_steps = 1000
+decay_rate = 0.9
+learning_rate_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+    initial_learning_rate, decay_steps, decay_rate
+)
+
+# Compile with learning rate schedule
 model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate_schedule),
     loss='categorical_crossentropy',
     metrics=['accuracy']
 )
 
-# Print model summary
-model.summary()
-
 # Create callbacks
 early_stopping = tf.keras.callbacks.EarlyStopping(
     monitor='val_accuracy',
-    patience=8,  # Matching unfrozen ResNet50 configuration
+    patience=15,
     restore_best_weights=True
 )
 
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss',
     factor=0.2,
-    patience=4,
-    min_lr=1e-7
+    patience=8,
+    min_lr=1e-6
 )
 
 # Train the model
-print("\nStarting training...")
-print(f"Training with {train_generator.samples} training images")
-print(f"Validating with {validation_generator.samples} validation images")
-print(f"Will train for maximum {EPOCHS} epochs (might stop earlier due to early stopping)")
-print(f"Each epoch will have {train_generator.samples // BATCH_SIZE} training steps")
-
 history = model.fit(
     train_generator,
     epochs=EPOCHS,
@@ -274,6 +258,8 @@ history = model.fit(
     callbacks=[early_stopping, reduce_lr],
     verbose=1
 )
+
+# Evaluate and save results as before...
 
 # Evaluate the model
 print("\nEvaluating on test set...")

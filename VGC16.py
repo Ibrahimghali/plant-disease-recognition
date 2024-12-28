@@ -133,7 +133,7 @@ def save_experiment_results(history, test_results, experiment_name, experiment_i
 IMG_SIZE = 224  # VGG16 default input size
 BATCH_SIZE = 32
 EPOCHS = 50
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
 
 # Directory paths - UPDATE THESE with your actual paths
 TRAIN_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_desease\\Train\\Train"
