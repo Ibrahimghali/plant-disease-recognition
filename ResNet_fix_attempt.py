@@ -1,13 +1,12 @@
 import tensorflow as tf
-from tensorflow.keras.applications import VGG16
+from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 import matplotlib.pyplot as plt
 import json
 import numpy as np
 from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
 import seaborn as sns
-
 
 def plot_training_history(history, model_name):
     """Creates comprehensive training history plots."""
@@ -33,10 +32,31 @@ def plot_training_history(history, model_name):
     plt.legend()
     plt.grid(True)
 
+    # Plot precision
+    if 'precision' in history.history:
+        plt.subplot(2, 2, 3)
+        plt.plot(history.history['precision'], label='Training', marker='o')
+        plt.plot(history.history['val_precision'], label='Validation', marker='o')
+        plt.title('Model Precision over Epochs')
+        plt.xlabel('Epoch')
+        plt.ylabel('Precision')
+        plt.legend()
+        plt.grid(True)
+
+    # Plot recall
+    if 'recall' in history.history:
+        plt.subplot(2, 2, 4)
+        plt.plot(history.history['recall'], label='Training', marker='o')
+        plt.plot(history.history['val_recall'], label='Validation', marker='o')
+        plt.title('Model Recall over Epochs')
+        plt.xlabel('Epoch')
+        plt.ylabel('Recall')
+        plt.legend()
+        plt.grid(True)
+
     plt.tight_layout()
     plt.savefig(f'{model_name}_training_history.png')
     plt.close()
-
 
 def plot_confusion_matrix(conf_matrix, class_names, model_name):
     """Creates and saves confusion matrix visualization."""
@@ -50,24 +70,16 @@ def plot_confusion_matrix(conf_matrix, class_names, model_name):
     plt.savefig(f'{model_name}_confusion_matrix.png')
     plt.close()
 
-
 def save_experiment_results(history, test_results, experiment_name, experiment_info, model, test_generator):
     """Saves comprehensive experiment results."""
-    # Get predictions for confusion matrix and metrics
     predictions = model.predict(test_generator)
     y_pred = np.argmax(predictions, axis=1)
     y_true = test_generator.classes
 
-    # Calculate precision, recall, f1-score
     precision, recall, f1, _ = precision_recall_fscore_support(y_true, y_pred, average=None)
-
-    # Calculate confusion matrix
     conf_matrix = confusion_matrix(y_true, y_pred)
-
-    # Class names
     class_names = list(test_generator.class_indices.keys())
 
-    # Create comprehensive results dictionary
     results = {
         "experiment_info": experiment_info,
         "training_metrics": {
@@ -80,6 +92,14 @@ def save_experiment_results(history, test_results, experiment_name, experiment_i
                 "training": float(history.history['loss'][-1]),
                 "validation": float(history.history['val_loss'][-1]),
                 "test": float(test_results[0])
+            },
+            "best_precision": {
+                "training": float(max(history.history.get('precision', [0]))),
+                "validation": float(max(history.history.get('val_precision', [0])))
+            },
+            "best_recall": {
+                "training": float(max(history.history.get('recall', [0]))),
+                "validation": float(max(history.history.get('val_recall', [0])))
             },
             "final_epoch": len(history.history['accuracy']),
             "stopped_early": len(history.history['accuracy']) < experiment_info['epochs']
@@ -94,15 +114,12 @@ def save_experiment_results(history, test_results, experiment_name, experiment_i
         "confusion_matrix": conf_matrix.tolist(),
     }
 
-    # Save results to JSON
     with open(f'{experiment_name}_results.json', 'w') as f:
         json.dump(results, f, indent=4)
 
-    # Create plots
     plot_training_history(history, experiment_name)
     plot_confusion_matrix(conf_matrix, class_names, experiment_name)
 
-    # Print comprehensive summary
     print(f"\n=== Results for {experiment_name} ===")
     print("\nAccuracy Metrics:")
     print(f"Best Training Accuracy: {results['training_metrics']['best_accuracy']['training']:.4f}")
@@ -128,33 +145,31 @@ def save_experiment_results(history, test_results, experiment_name, experiment_i
 
     return results
 
-
 # Configuration
-IMG_SIZE = 224  # VGG16 default input size
-BATCH_SIZE = 32
-EPOCHS = 30  # Reduced epochs since we expect faster convergence with augmentation
-LEARNING_RATE =  0.00001
+IMG_SIZE = 224
+BATCH_SIZE = 16
+EPOCHS = 50
+LEARNING_RATE = 0.00005
+L2_LAMBDA = 0.001
 
-# Directory paths - UPDATE THESE with your actual paths
+# Directory paths
 TRAIN_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_desease\\Train\\Train"
 VALID_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_desease\\Validation\\Validation"
 TEST_DIR = "C:\\Users\\SelmaB\\Desktop\\Plant_desease\\Test\\Test"
 
-# Create data generators with augmentation for training
+# Enhanced data generators with stronger augmentation
 train_datagen = ImageDataGenerator(
-    rescale=1./255,  # Normalize pixel values
-    rotation_range=15,  # Moderate rotation
-    width_shift_range=0.1,  # Slight horizontal shift
-    height_shift_range=0.1,  # Slight vertical shift
-    horizontal_flip=True,  # Horizontal flip
-    zoom_range=0.1,  # Slight zoom
-    fill_mode='nearest'  # Fill strategy for created pixels
+    rescale=1./255,
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    horizontal_flip=True,
+    brightness_range=[0.8, 1.2],
+    zoom_range=0.2,
+    fill_mode='nearest'
 )
 
-# No augmentation for validation/test sets
-valid_test_datagen = ImageDataGenerator(
-    rescale=1./255
-)
+valid_test_datagen = ImageDataGenerator(rescale=1./255)
 
 # Create generators
 print("Loading training data...")
@@ -178,57 +193,70 @@ test_generator = valid_test_datagen.flow_from_directory(
     TEST_DIR,
     target_size=(IMG_SIZE, IMG_SIZE),
     batch_size=BATCH_SIZE,
-    class_mode='categorical'
+    class_mode='categorical',
+    shuffle=False
 )
 
-# Create the model
+# Create model
 print("Creating model...")
-base_model = VGG16(
+base_model = ResNet50(
     weights='imagenet',
     include_top=False,
     input_shape=(IMG_SIZE, IMG_SIZE, 3)
 )
 
-# Unfreeze the last few convolutional layers
-for layer in base_model.layers[:-30]:  # Freeze all except last 30 layers
+# More conservative layer unfreezing
+for layer in base_model.layers:
     layer.trainable = False
+# Unfreeze only the last few layers (using the same strategy as VGG16)
+for layer in base_model.layers[-4:]:
+    layer.trainable = True
 
-# Create the complete model
+# Create the complete model with increased regularization
 inputs = tf.keras.Input(shape=(IMG_SIZE, IMG_SIZE, 3))
 x = base_model(inputs)
 x = GlobalAveragePooling2D()(x)
-x = Dense(1024, activation='relu')(x)
-outputs = Dense(3, activation='softmax')(x)  # 3 classes for plant disease
+x = Dense(512, activation='relu',
+          kernel_regularizer=tf.keras.regularizers.l2(L2_LAMBDA))(x)
+x = Dropout(0.6)(x)
+x = Dense(256, activation='relu',
+          kernel_regularizer=tf.keras.regularizers.l2(L2_LAMBDA))(x)
+x = Dropout(0.5)(x)
+outputs = Dense(3, activation='softmax',
+                kernel_regularizer=tf.keras.regularizers.l2(L2_LAMBDA))(x)
 
 model = tf.keras.Model(inputs, outputs)
 
-# Compile the model
+# Compile with additional metrics
 model.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE),
     loss='categorical_crossentropy',
-    metrics=['accuracy']
+    metrics=['accuracy',
+             tf.keras.metrics.Precision(name='precision'),
+             tf.keras.metrics.Recall(name='recall')]
 )
 
-# Create callbacks
+# Enhanced callbacks
 early_stopping = tf.keras.callbacks.EarlyStopping(
-    monitor='val_accuracy',
+    monitor='val_loss',
     patience=5,
-    restore_best_weights=True
+    restore_best_weights=True,
+    min_delta=0.001
 )
 
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss',
-    factor=0.2,
+    factor=0.3,
     patience=3,
-    min_lr=1e-6
+    min_lr=1e-7,
+    verbose=1
 )
 
 # Train the model
 print("\nStarting training...")
 print(f"Training with {train_generator.samples} training images")
 print(f"Validating with {validation_generator.samples} validation images")
-print(f"Will train for maximum {EPOCHS} epochs (might stop earlier due to early stopping)")
-print(f"Each epoch will have {train_generator.samples // BATCH_SIZE} training steps")
+print(f"Will train for maximum {EPOCHS} epochs")
 
 history = model.fit(
     train_generator,
@@ -238,36 +266,44 @@ history = model.fit(
     verbose=1
 )
 
-# Evaluate the model
+# Evaluate
 print("\nEvaluating on test set...")
-test_results = model.evaluate(test_generator)
+test_results = model.evaluate(test_generator, verbose=1)
 
 # Save results
 experiment_info = {
-    'type': 'augmented_model',
-    'model': 'VGG16',
+    'type': 'regularized_model',
+    'model': 'ResNet50',
     'epochs': EPOCHS,
     'batch_size': BATCH_SIZE,
     'learning_rate': LEARNING_RATE,
-    'data_augmentation': {
-        'rotation_range': 15,
-        'width_shift_range': 0.1,
-        'height_shift_range': 0.1,
-        'horizontal_flip': True,
-        'zoom_range': 0.1
+    'l2_regularization': L2_LAMBDA,
+    'architecture': {
+        'layers': ['ResNet50', 'GAP', 'Dense(512)', 'Dropout(0.6)',
+                  'Dense(256)', 'Dropout(0.5)', 'Dense(3)'],
+        'regularization': 'L2 + Dropout',
+        'unfrozen_layers': 4
     },
-    'frozen_layers': 'all'
+    'data_augmentation': {
+        'enabled': True,
+        'rotation_range': 20,
+        'width_shift_range': 0.2,
+        'height_shift_range': 0.2,
+        'horizontal_flip': True,
+        'brightness_range': [0.8, 1.2],
+        'zoom_range': 0.2
+    }
 }
 
 results = save_experiment_results(
     history=history,
     test_results=test_results,
-    experiment_name='augmented_vgg16',
+    experiment_name='regularized_resnet',
     experiment_info=experiment_info,
     model=model,
     test_generator=test_generator
 )
 
 print("\nExperiment completed! Check the generated files:")
-print("1. augmented_vgg16_training_history.png - Training plots")
-print("2. augmented_vgg16_results.json - Detailed metrics")
+print("1. regularized_resnet_training_history.png - Training plots")
+print("2. regularized_resnet_results.json - Detailed metrics")
