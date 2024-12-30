@@ -4,7 +4,6 @@ from tensorflow.keras.applications import VGG16
 from tensorflow.keras import layers, models
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
-import os
 
 # 1. Load VGG16 Without the Top Layer
 base_model = VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
@@ -93,6 +92,3 @@ test_generator = test_datagen.flow_from_directory(
 
 test_loss, test_acc = model.evaluate(test_generator, steps=test_generator.samples // 32)
 print(f"Test accuracy: {test_acc * 100:.2f}%")
-
-# 7. Save the Trained Model
-model.save('plant_disease_vgg16.h5')
