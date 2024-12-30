@@ -6,22 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="3aba4606-187b-4da5-be42-fde64f922a31" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Custom_architecture.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ResNet.py" beforeDir="false" afterPath="$PROJECT_DIR$/ResNet_fix_attempt.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ResNet_trainable.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ResNet_with_data_augmentation.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ResNet_with_data_augmentation_unfreezing_some.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/VGC16.py" beforeDir="false" afterPath="$PROJECT_DIR$/VGC16_fix_attempt.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/VGC16_with_data_augmentation.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/augmented_resnet50_confusion_matrix_unfreezing_some.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/augmented_resnet50_results_total_freeeze.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/augmented_resnet50_total_freeze_confusion_matrix.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/augmented_resnet50_training_history_total_freeze.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/augmented_vgg16_confusion_matrix.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/augmented_vgg16_results.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/augmented_vgg16_training_history.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/custom_architecture_testinf_learning_rate.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trials/ResNet_with_data_augmentation_unfreezing_some.py" beforeDir="false" afterPath="$PROJECT_DIR$/regularized_VGG16_trainable.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,6 +42,7 @@
     "Python.VGC16_fix_attempt.executor": "Run",
     "Python.VGC16_with_data_augmentation.executor": "Run",
     "Python.VGG16_total_freeze.executor": "Run",
+    "Python.regularized_VGG16_trainable.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "Selma",
     "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
